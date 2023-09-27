@@ -7,6 +7,8 @@
 .idea/jarRepositories.xml
 .idea/modules.xml
 .idea/workspace.xml
+# Hotswap agent is computer-dependant.
+.idea/hotswap_agent.xml
 *.iws
 *.iml
 *.ipr
