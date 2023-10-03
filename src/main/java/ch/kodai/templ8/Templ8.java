@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "templ8", mixinStandardHelpOptions = true, version = "0.0.1", description = "A Kubernetes templating utility")
@@ -32,16 +31,16 @@ public class Templ8 implements Callable<Integer> {
     @Option(names = {"-ie", "--input-encoding"},
             paramLabel = "ENCODING",
             description = """
-                The input file encoding: ${COMPLETION-CANDIDATES}.
-                Defaults to UTF8.""")
-    Encoding inputEncoding = Encoding.UTF8;
+                    The input file encoding: ${COMPLETION-CANDIDATES}.
+                    Defaults to UTF8.""")
+    SupportedCharset inputCharset = SupportedCharset.UTF8;
 
     @Option(names = {"-oe", "--output-encoding"},
             paramLabel = "ENCODING",
             description = """
-                The output file encoding: ${COMPLETION-CANDIDATES}.
-                Defaults to UTF8.""")
-    Encoding outputEncoding = Encoding.UTF8;
+                    The output file encoding: ${COMPLETION-CANDIDATES}.
+                    Defaults to UTF8.""")
+    SupportedCharset outputCharset = SupportedCharset.UTF8;
 
     @Override
     public Integer call() throws IOException {
@@ -49,8 +48,8 @@ public class Templ8 implements Callable<Integer> {
         Templater templater = new Templater(parser);
 
         try (
-            FileReader fileReader = new FileReader(this.templateFile, StandardCharsets.UTF_8);
-            FileWriter fileWriter = new FileWriter(this.outputFile, StandardCharsets.UTF_8)
+                FileReader fileReader = new FileReader(this.templateFile, inputCharset.toStandardCharset());
+                FileWriter fileWriter = new FileWriter(this.outputFile, outputCharset.toStandardCharset())
         ) {
             templater.template(fileReader, fileWriter);
         } catch (IOException e) {
