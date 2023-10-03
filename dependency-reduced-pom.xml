@@ -22,6 +22,7 @@
                 </transformer>
                 <transformer>
                   <resource>MANIFEST.MF</resource>
+                  <resource>*.MF</resource>
                 </transformer>
               </transformers>
             </configuration>
