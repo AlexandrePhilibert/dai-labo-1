@@ -1,17 +1,30 @@
 package ch.kodai.templ8;
 
 
+import ch.kodai.templ8.templating.Templater;
+import ch.kodai.templ8.values.impl.YamlValueParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "templ8", mixinStandardHelpOptions = true, version = "0.0.1", description = "A Kubernetes templating utility")
 public class Templ8 implements Callable<Integer> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Templ8.class);
+
     @Option(names = {"-f", "--filename"}, paramLabel = "FILE", required = true, description = "The template file to transform")
-    File inputFile;
+    File templateFile;
+
+    @Option(names = {"-v", "--values"}, paramLabel = "FILE", required = true, description = "The values files that will be used in the template file")
+    File valuesFile;
 
     @Option(names = {"-o", "--output"}, paramLabel = "FILE", required = true, description = "The transformed file location")
     File outputFile;
@@ -31,7 +44,20 @@ public class Templ8 implements Callable<Integer> {
     Encoding outputEncoding = Encoding.UTF8;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
+        YamlValueParser parser = new YamlValueParser(this.valuesFile);
+        Templater templater = new Templater(parser);
+
+        try (
+            FileReader fileReader = new FileReader(this.templateFile, StandardCharsets.UTF_8);
+            FileWriter fileWriter = new FileWriter(this.outputFile, StandardCharsets.UTF_8)
+        ) {
+            templater.template(fileReader, fileWriter);
+        } catch (IOException e) {
+            LOGGER.error("Error when templating", e);
+            return 1;
+        }
+
         return 0;
     }
 }
