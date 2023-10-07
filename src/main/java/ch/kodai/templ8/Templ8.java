@@ -2,26 +2,20 @@ package ch.kodai.templ8;
 
 
 import ch.kodai.templ8.templating.Templater;
+import ch.kodai.templ8.values.exceptions.ValuesLoadException;
 import ch.kodai.templ8.values.impl.CommandValueProvider;
 import ch.kodai.templ8.values.impl.ComposableValueProvider;
 import ch.kodai.templ8.values.impl.YamlValueParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "templ8", mixinStandardHelpOptions = true, version = "0.0.1", description = "A Kubernetes templating utility")
 public class Templ8 implements Callable<Integer> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Templ8.class);
 
     @Option(names = {"-f", "--filename"}, paramLabel = "FILE", required = true, description = "The template file to transform")
     File templateFile;
@@ -51,23 +45,51 @@ public class Templ8 implements Callable<Integer> {
     SupportedCharset outputCharset = SupportedCharset.UTF8;
 
     @Override
-    public Integer call() throws IOException {
+    public Integer call() {
         ComposableValueProvider composableValueProvider = new ComposableValueProvider();
         // Put the parameters first, as they are called in the order they are added, and we want to put cli params
         // in front.
+
+        if (outputFile.exists()) {
+            Dialoguer.showInfo("Output path already exists, replacing...");
+        }
+
+        Dialoguer.showProgress("Templating in progress...");
+
         if (!parameters.isEmpty()) {
             CommandValueProvider commandValueProvider = new CommandValueProvider();
-            parameters.forEach(commandValueProvider::parseValue);
+            for (String parameter : parameters) {
+                try {
+                    commandValueProvider.parseValue(parameter);
+                } catch (ValuesLoadException e) {
+                    Dialoguer.showError("Invalid format for input '%s': %s".formatted(parameter, e.getInnerMessage()));
+                }
+            }
+
             composableValueProvider.addProvider(commandValueProvider);
         }
 
 
         if (valuesFile != null) {
-            YamlValueParser parser = new YamlValueParser(this.valuesFile);
-            composableValueProvider.addProvider(parser);
+
+            try {
+                YamlValueParser parser = new YamlValueParser(this.valuesFile);
+                composableValueProvider.addProvider(parser);
+            } catch (FileNotFoundException e) {
+                Dialoguer.showError("The values file '%s' was not found.".formatted(this.valuesFile.getPath()));
+                return 1;
+            } catch (Exception e) {
+                Dialoguer.showError("Invalid values file: " + e.getMessage() + " (" + e.getClass().getName() + ")");
+                return 1;
+            }
         }
 
         Templater templater = new Templater(composableValueProvider);
+
+        if (!this.templateFile.exists()) {
+            Dialoguer.showError("The template file '%s' was not found.".formatted(this.templateFile.getPath()));
+            return 1;
+        }
 
         try (
                 FileReader fileReader = new FileReader(this.templateFile, inputCharset.toStandardCharset());
@@ -75,9 +97,14 @@ public class Templ8 implements Callable<Integer> {
         ) {
             templater.template(fileReader, fileWriter);
         } catch (IOException e) {
-            LOGGER.error("Error when templating", e);
+            Dialoguer.showError("An error occurred while templating: " + e.getMessage());
             return 1;
         }
+
+        Dialoguer.showSuccess("Templated %s successfully at %s".formatted(
+                templateFile.getName(),
+                outputFile.getName()
+        ));
 
         return 0;
     }
