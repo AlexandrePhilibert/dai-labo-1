@@ -26,9 +26,10 @@ public class Templater {
         PebbleEngine pebbleEngine = new PebbleEngine.Builder()
                 .extension(new ValuesProviderExtension())
                 .loader(new TemplateLoader(reader))
+                .newLineTrimming(false)
                 .build();
         PebbleTemplate template = pebbleEngine.getTemplate(TemplateLoader.TEMPLATE_NAME);
 
-        template.evaluate(writer, Map.of("value", new ValueRoot(provider, null)));
+        template.evaluate(writer, Map.of("values", new ValueRoot(provider, null)));
     }
 }

@@ -96,6 +96,8 @@ public class Templ8 implements Callable<Integer> {
                 FileWriter fileWriter = new FileWriter(this.outputFile, outputCharset.toStandardCharset())
         ) {
             templater.template(fileReader, fileWriter);
+
+            LOGGER.info("Templated file successfully !");
         } catch (IOException e) {
             Dialoguer.showError("An error occurred while templating: " + e.getMessage());
             return 1;
