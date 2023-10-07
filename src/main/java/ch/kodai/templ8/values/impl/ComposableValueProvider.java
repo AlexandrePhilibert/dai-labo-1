@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class ComposableValueProvider implements ValuesProvider {
     private List<ValuesProvider> providers = new ArrayList<>();
@@ -18,6 +19,6 @@ public class ComposableValueProvider implements ValuesProvider {
         return providers.stream()
                 .map(e -> e.getValue(key))
                 .filter(Optional::isPresent)
-                .findFirst().flatMap(e -> e);
+                .findFirst().flatMap(Function.identity());
     }
 }

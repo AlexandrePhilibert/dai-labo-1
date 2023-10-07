@@ -41,7 +41,7 @@ class TemplaterTest {
     void testSingleParam() throws IOException {
         String input = """
                 version: 1
-                test: {{ value.test }}""";
+                test: {{ values.test }}""";
         StringWriter writer = new StringWriter();
         new Templater(getTestProvider()).template(new StringReader(input), writer);
 
@@ -54,7 +54,7 @@ class TemplaterTest {
     void testNestedPath() throws IOException {
         String input = """
                 version: 1
-                test: {{ value.nested.test }}""";
+                test: {{ values.nested.test }}""";
         StringWriter writer = new StringWriter();
         new Templater(getTestProvider()).template(new StringReader(input), writer);
 
