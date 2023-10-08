@@ -10,6 +10,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 import java.io.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -46,6 +48,8 @@ public class Templ8 implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        Instant start = Instant.now();
+
         ComposableValueProvider composableValueProvider = new ComposableValueProvider();
         // Put the parameters first, as they are called in the order they are added, and we want to put cli params
         // in front.
@@ -96,16 +100,17 @@ public class Templ8 implements Callable<Integer> {
                 FileWriter fileWriter = new FileWriter(this.outputFile, outputCharset.toStandardCharset())
         ) {
             templater.template(fileReader, fileWriter);
-
-            LOGGER.info("Templated file successfully !");
         } catch (IOException e) {
             Dialoguer.showError("An error occurred while templating: " + e.getMessage());
             return 1;
         }
 
-        Dialoguer.showSuccess("Templated %s successfully at %s".formatted(
+        Instant end = Instant.now();
+
+        Dialoguer.showSuccess("Templated %s successfully at %s in %dms".formatted(
                 templateFile.getName(),
-                outputFile.getName()
+                outputFile.getName(),
+                Duration.between(start, end).toMillis()
         ));
 
         return 0;
